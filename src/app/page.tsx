@@ -1,20 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Home() {
   const [listening, setListening] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+  // ✅ Initialize Speech Recognition once
+  useEffect(() => {
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      ((window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition);
+
+    if (!SpeechRecognition) {
+      alert("Speech Recognition not supported in your browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = async (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setMessages((prev) => [...prev, `🗣️ ${transcript}`]);
+      await handleSendMessage(transcript);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  }, []);
+
+  // ✅ Toggle microphone listening
   const toggleListening = () => {
-    const newStatus = !listening;
-    setListening(newStatus);
-    setMessages((prev) => [
-      ...prev,
-      newStatus ? "🎤 Listening..." : "🛑 Stopped listening.",
-    ]);
+    if (!recognitionRef.current) return;
+
+    if (listening) {
+      recognitionRef.current.stop();
+      setMessages((prev) => [...prev, "🛑 Stopped listening."]);
+    } else {
+      recognitionRef.current.start();
+      setMessages((prev) => [...prev, "🎤 Listening..."]);
+    }
+
+    setListening((prev) => !prev);
+  };
+
+  // ✅ Send message to backend
+  const handleSendMessage = async (text: string) => {
+    try {
+      const res = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      const data = await res.json();
+      if (data?.response) {
+        setMessages((prev) => [...prev, `🤖 ${data.response}`]);
+      } else {
+        setMessages((prev) => [...prev, "⚠️ Error getting response"]);
+      }
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [...prev, "❌ Server error"]);
+    }
   };
 
   return (
@@ -36,16 +96,16 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 className={`flex ${
-                  msg.startsWith("🎤") || msg.startsWith("🛑")
+                  msg.startsWith("🗣️") || msg.startsWith("🎤") || msg.startsWith("🛑")
                     ? "justify-end"
                     : "justify-start"
                 }`}
               >
                 <div
                   className={`px-4 py-2 rounded-2xl shadow max-w-xs text-sm ${
-                    msg.startsWith("🎤") || msg.startsWith("🛑")
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-800 border border-gray-700 text-gray-100"
+                    msg.startsWith("🤖")
+                      ? "bg-gray-800 border border-gray-700 text-gray-100"
+                      : "bg-indigo-600 text-white"
                   }`}
                 >
                   {msg}
