@@ -1,5 +1,7 @@
 "use client";
 
+
+
 import { useEffect, useRef, useState } from "react";
 import { Mic, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -40,8 +42,12 @@ export default function Home() {
   }, []);
 
   // ✅ Toggle microphone listening
-  const toggleListening = () => {
-    if (!recognitionRef.current) return;
+  const toggleListening = async () => {
+  if (!recognitionRef.current) return;
+
+  try {
+    // ✅ Ask browser for mic access explicitly
+    await navigator.mediaDevices.getUserMedia({ audio: true });
 
     if (listening) {
       recognitionRef.current.stop();
@@ -52,7 +58,12 @@ export default function Home() {
     }
 
     setListening((prev) => !prev);
-  };
+  } catch (error) {
+    // ❌ User denied mic access or an error occurred
+    alert("🎙️ Microphone access denied. Please allow mic permission in your browser settings.");
+    console.error(error);
+  }
+};
 
   // ✅ Send message to backend
   const handleSendMessage = async (text: string) => {
