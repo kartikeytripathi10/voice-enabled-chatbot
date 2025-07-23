@@ -68,7 +68,7 @@ export default function Home() {
   // ✅ Send message to backend
   const handleSendMessage = async (text: string) => {
     try {
-      const res = await fetch("http://localhost:8000/chat", {
+      const res = await fetch("https://voice-enabled-chatbot-backend22.onrender.com/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
