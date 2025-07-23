@@ -7,6 +7,8 @@ declare global {
     webkitSpeechRecognition: any;
     SpeechRecognition: any;
   }
+  type SpeechRecognition = any;
+
 
   interface SpeechRecognition extends EventTarget {
     start(): void;
