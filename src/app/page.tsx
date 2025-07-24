@@ -6,6 +6,19 @@ import { useEffect, useRef, useState } from "react";
 import { Mic, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+const speakText = (text: string) => {
+  if ("speechSynthesis" in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.pitch = 1;
+    utterance.rate = 1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+  } else {
+    console.warn("🛑 Speech synthesis not supported");
+  }
+};
+
 export default function Home() {
   const [listening, setListening] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
@@ -79,6 +92,7 @@ export default function Home() {
       const data = await res.json();
       if (data?.response) {
         setMessages((prev) => [...prev, `🤖 ${data.response}`]);
+        speakText(data.response);
       } else {
         setMessages((prev) => [...prev, "⚠️ Error getting response"]);
       }
