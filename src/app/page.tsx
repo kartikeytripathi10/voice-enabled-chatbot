@@ -36,7 +36,7 @@ export default function Home() {
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new (SpeechRecognition as any)();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
